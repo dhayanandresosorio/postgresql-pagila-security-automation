@@ -1,0 +1,15 @@
+﻿# Logs generados por los scripts
+logs/
+*.log
+
+# Base de datos Pagila clonada temporalmente
+pagila/
+
+# Archivos temporales
+*.tmp
+*.bak
+.DS_Store
+
+# Configuración local
+.env
+.vscode/
