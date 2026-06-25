@@ -1,5 +1,5 @@
--- Corregimos la funcion get_customer_balance que viene en Pagila.
--- El problema es que trae IF(), que es de MySQL, y PostgreSQL usa CASE WHEN.
+-- Corregir la funcion get_customer_balance incluida en Pagila.
+-- La version original usa IF(), que es sintaxis de MySQL. En PostgreSQL se usa CASE WHEN.
 CREATE OR REPLACE FUNCTION public.get_customer_balance(
     p_customer_id integer,
     p_effective_date timestamp with time zone
@@ -12,59 +12,57 @@ DECLARE
     v_overfees NUMERIC(10,2);
     v_payments NUMERIC(10,2);
 BEGIN
-    -- Calculamos el coste de los alquileres anteriores
-    SELECT COALESCE(SUM(film.rental_rate), 0)
+    -- Calcular el coste de los alquileres anteriores
+    SELECT COALESCE(SUM(f.rental_rate), 0)
     INTO v_rentfees
-    FROM film, inventory, rental
-    WHERE film.film_id = inventory.film_id
-      AND inventory.inventory_id = rental.inventory_id
-      AND rental.rental_date <= p_effective_date
-      AND rental.customer_id = p_customer_id;
+    FROM film f
+    JOIN inventory i
+        ON f.film_id = i.film_id
+    JOIN rental r
+        ON i.inventory_id = r.inventory_id
+    WHERE r.rental_date <= p_effective_date
+      AND r.customer_id = p_customer_id;
 
-    -- Calculamos los dias de retraso.
-    -- Usamos CASE WHEN porque PostgreSQL no acepta IF() dentro de un SELECT.
+    -- Calcular los dias de retraso
     SELECT COALESCE(SUM(
         CASE
-            WHEN rental.return_date IS NOT NULL
-             AND (rental.return_date::date - rental.rental_date::date) > film.rental_duration
-            THEN ((rental.return_date::date - rental.rental_date::date) - film.rental_duration)::numeric
+            WHEN r.return_date IS NOT NULL
+             AND (r.return_date::date - r.rental_date::date) > f.rental_duration
+            THEN ((r.return_date::date - r.rental_date::date) - f.rental_duration)::numeric
             ELSE 0::numeric
         END
     ), 0)
     INTO v_overfees
-    FROM rental, inventory, film
-    WHERE film.film_id = inventory.film_id
-      AND inventory.inventory_id = rental.inventory_id
-      AND rental.rental_date <= p_effective_date
-      AND rental.customer_id = p_customer_id;
+    FROM rental r
+    JOIN inventory i
+        ON i.inventory_id = r.inventory_id
+    JOIN film f
+        ON f.film_id = i.film_id
+    WHERE r.rental_date <= p_effective_date
+      AND r.customer_id = p_customer_id;
 
-    -- Calculamos los pagos hechos por el cliente
-    SELECT COALESCE(SUM(payment.amount), 0)
+    -- Calcular pagos realizados por el cliente
+    SELECT COALESCE(SUM(p.amount), 0)
     INTO v_payments
-    FROM payment
-    WHERE payment.payment_date <= p_effective_date
-      AND payment.customer_id = p_customer_id;
+    FROM payment p
+    WHERE p.payment_date <= p_effective_date
+      AND p.customer_id = p_customer_id;
 
-    -- Devolvemos el balance final del cliente
     RETURN v_rentfees + v_overfees - v_payments;
 END;
 $function$;
 
-
--- Eliminamos el trigger si ya existe
+-- Eliminar trigger y funcion si ya existen
 DROP TRIGGER IF EXISTS trigger_comprobar_alquiler ON rental;
-
--- Eliminamos la funcion del trigger si ya existe
 DROP FUNCTION IF EXISTS comprobar_alquiler();
 
--- Funcion del trigger que impide alquiler si hay deuda o alquileres antiguos pendientes
+-- Funcion del trigger que impide alquileres si hay deuda o alquileres antiguos pendientes
 CREATE OR REPLACE FUNCTION comprobar_alquiler()
 RETURNS TRIGGER AS $$
 DECLARE
     alquileres_pendientes INTEGER;
     deuda_cliente NUMERIC(10,2);
 BEGIN
-    -- Contamos los alquileres no devueltos de hace mas de 30 dias
     SELECT COUNT(*)
     INTO alquileres_pendientes
     FROM rental
@@ -72,25 +70,27 @@ BEGIN
       AND return_date IS NULL
       AND rental_date < CURRENT_TIMESTAMP - INTERVAL '30 days';
 
-    -- Si tiene alquileres pendientes antiguos, no puede alquilar
     IF alquileres_pendientes > 0 THEN
-        RAISE EXCEPTION 'No se puede crear el alquiler. El cliente % tiene alquileres pendientes de hace mas de 30 dias.', NEW.customer_id;
+        RAISE EXCEPTION
+            'No se puede crear el alquiler. El cliente % tiene alquileres pendientes de hace mas de 30 dias.',
+            NEW.customer_id;
     END IF;
 
-    -- Comprobamos si el cliente tiene deuda pendiente
     SELECT COALESCE(get_customer_balance(NEW.customer_id, CURRENT_TIMESTAMP), 0)
     INTO deuda_cliente;
 
-    -- Si tiene deuda, no puede alquilar
     IF deuda_cliente > 0 THEN
-        RAISE EXCEPTION 'No se puede crear el alquiler. El cliente % tiene una deuda pendiente de %.', NEW.customer_id, deuda_cliente;
+        RAISE EXCEPTION
+            'No se puede crear el alquiler. El cliente % tiene una deuda pendiente de %.',
+            NEW.customer_id,
+            deuda_cliente;
     END IF;
 
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
--- Creamos el trigger antes de insertar un alquiler
+-- Crear trigger antes de insertar un alquiler
 CREATE TRIGGER trigger_comprobar_alquiler
 BEFORE INSERT ON rental
 FOR EACH ROW

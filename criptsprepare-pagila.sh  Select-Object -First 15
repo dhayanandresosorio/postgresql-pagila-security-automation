@@ -1,0 +1,233 @@
+[1mdiff --git a/scripts/maintenance.sh b/scripts/maintenance.sh[m
+[1mindex 69ba730..f0706c5 100644[m
+[1m--- a/scripts/maintenance.sh[m
+[1m+++ b/scripts/maintenance.sh[m
+[36m@@ -1,65 +1,29 @@[m
+[31m-﻿#!/bin/bash[m
+[32m+[m[32m#!/bin/bash[m
+ [m
+[32m+[m[32mset -euo pipefail[m
+[32m+[m
+[32m+[m[32mDB_NAME="pagila"[m
+ LOG_DIR="logs"[m
+[31m-mkdir -p "$LOG_DIR"[m
+ LOG="$LOG_DIR/maintenance.log"[m
+ [m
+[31m-# Guardar todo en pantalla y en el log[m
+[32m+[m[32mmkdir -p "$LOG_DIR"[m
+[32m+[m
+ exec > >(tee -a "$LOG") 2>&1[m
+ [m
+ echo "========================="[m
+ echo "INICIO DEL MANTENIMIENTO"[m
+ echo "========================="[m
+ [m
+[31m-# Ejecutamos VACUUM ANALYZE en las tablas clave[m
+[31m-echo "Haciendo VACUUM ANALYZE en rental..."[m
+[31m-sudo -u postgres psql -v ON_ERROR_STOP=1 -d pagila -c "VACUUM ANALYZE rental;"[m
+[31m-[m
+[31m-if [ $? -ne 0 ]; then[m
+[31m-    echo "Error haciendo VACUUM ANALYZE en rental"[m
+[31m-    exit 1[m
+[31m-fi[m
+[31m-[m
+[31m-echo "Haciendo VACUUM ANALYZE en inventory..."[m
+[31m-sudo -u postgres psql -v ON_ERROR_STOP=1 -d pagila -c "VACUUM ANALYZE inventory;"[m
+[31m-[m
+[31m-if [ $? -ne 0 ]; then[m
+[31m-    echo "Error haciendo VACUUM ANALYZE en inventory"[m
+[31m-    exit 1[m
+[31m-fi[m
+[31m-[m
+[31m-echo "Haciendo VACUUM ANALYZE en film..."[m
+[31m-sudo -u postgres psql -v ON_ERROR_STOP=1 -d pagila -c "VACUUM ANALYZE film;"[m
+[31m-[m
+[31m-if [ $? -ne 0 ]; then[m
+[31m-    echo "Error haciendo VACUUM ANALYZE en film"[m
+[31m-    exit 1[m
+[31m-fi[m
+[31m-[m
+[31m-# Ejecutamos REINDEX en las tablas clave[m
+[31m-echo "Haciendo REINDEX en rental..."[m
+[31m-sudo -u postgres psql -v ON_ERROR_STOP=1 -d pagila -c "REINDEX TABLE rental;"[m
+[31m-[m
+[31m-if [ $? -ne 0 ]; then[m
+[31m-    echo "Error haciendo REINDEX en rental"[m
+[31m-    exit 1[m
+[31m-fi[m
+[31m-[m
+[31m-echo "Haciendo REINDEX en inventory..."[m
+[31m-sudo -u postgres psql -v ON_ERROR_STOP=1 -d pagila -c "REINDEX TABLE inventory;"[m
+[31m-[m
+[31m-if [ $? -ne 0 ]; then[m
+[31m-    echo "Error haciendo REINDEX en inventory"[m
+[31m-    exit 1[m
+[31m-fi[m
+[31m-[m
+[31m-echo "Haciendo REINDEX en film..."[m
+[31m-sudo -u postgres psql -v ON_ERROR_STOP=1 -d pagila -c "REINDEX TABLE film;"[m
+[32m+[m[32mTABLES=("rental" "inventory" "film")[m
+ [m
+[31m-if [ $? -ne 0 ]; then[m
+[31m-    echo "Error haciendo REINDEX en film"[m
+[31m-    exit 1[m
+[31m-fi[m
+[32m+[m[32mfor TABLE in "${TABLES[@]}"; do[m
+[32m+[m[32m    echo "Haciendo VACUUM ANALYZE en $TABLE..."[m
+[32m+[m[32m    sudo -u postgres psql -v ON_ERROR_STOP=1 -d "$DB_NAME" -c "VACUUM ANALYZE $TABLE;"[m
+[32m+[m[32mdone[m
+ [m
+[31m-echo "Mantenimiento terminado correctamente"[m
+[32m+[m[32mfor TABLE in "${TABLES[@]}"; do[m
+[32m+[m[32m    echo "Haciendo REINDEX en $TABLE..."[m
+[32m+[m[32m    sudo -u postgres psql -v ON_ERROR_STOP=1 -d "$DB_NAME" -c "REINDEX TABLE $TABLE;"[m
+[32m+[m[32mdone[m
+ [m
+[32m+[m[32mecho "Mantenimiento terminado correctamente"[m
+\ No newline at end of file[m
+[1mdiff --git a/scripts/prepare-pagila.sh b/scripts/prepare-pagila.sh[m
+[1mindex 8fddcc3..2532394 100644[m
+[1m--- a/scripts/prepare-pagila.sh[m
+[1m+++ b/scripts/prepare-pagila.sh[m
+[36m@@ -1,47 +1,29 @@[m
+ #!/bin/bash[m
+ [m
+[31m-# Clonamos el repositorio de Pagila[m
+[32m+[m[32mset -euo pipefail[m
+[32m+[m
+[32m+[m[32mPAGILA_REPO="https://github.com/devrimgunduz/pagila.git"[m
+[32m+[m[32mDB_NAME="pagila"[m
+[32m+[m
+ echo "Clonando repositorio de Pagila..."[m
+ [m
+[31m-# Si ya existe la carpeta, la borramos[m
+ if [ -d "pagila" ]; then[m
+[31m-    echo "El directorio 'pagila' ya existe, eliminándolo..."[m
+[31m-    rm -rf pagila  # Eliminamos la carpeta 'pagila' para asegurarnos de tener una copia limpia[m
+[32m+[m[32m    echo "El directorio 'pagila' ya existe, eliminandolo..."[m
+[32m+[m[32m    rm -rf pagila[m
+ fi[m
+ [m
+[31m-# Clonamos el repositorio[m
+[31m-git clone https://github.com/devrimgunduz/pagila.git[m
+[32m+[m[32mgit clone "$PAGILA_REPO"[m
+ [m
+[31m-if [ $? -ne 0 ]; then[m
+[31m-    echo "Error al clonar el repositorio"[m
+[31m-    exit 1[m
+[31m-fi[m
+[32m+[m[32mecho "Eliminando base de datos $DB_NAME si existia..."[m
+[32m+[m[32msudo -u postgres dropdb --if-exists "$DB_NAME"[m
+ [m
+[31m-# Eliminamos la base de datos si ya existe[m
+[31m-echo "Eliminando base de datos pagila si existía..."[m
+[31m-sudo -u postgres dropdb --if-exists pagila[m
+[32m+[m[32mecho "Creando base de datos $DB_NAME..."[m
+[32m+[m[32msudo -u postgres createdb "$DB_NAME"[m
+ [m
+[31m-# Creamos la base de datos[m
+[31m-echo "Creando base de datos pagila..."[m
+[31m-sudo -u postgres createdb pagila[m
+[31m-if [ $? -ne 0 ]; then[m
+[31m-    echo "Error al crear la base de datos"[m
+[31m-    exit 1[m
+[31m-fi[m
+[32m+[m[32mecho "Cargando esquema de Pagila..."[m
+[32m+[m[32msudo -u postgres psql -v ON_ERROR_STOP=1 -d "$DB_NAME" -f pagila/pagila-schema.sql[m
+ [m
+[31m-# Cargamos el esquema y los datos[m
+[31m-echo "Cargando esquema..."[m
+[31m-sudo -u postgres psql -d pagila -f pagila/pagila-schema.sql[m
+[31m-if [ $? -ne 0 ]; then[m
+[31m-    echo "Error al cargar el esquema"[m
+[31m-    exit 1[m
+[31m-fi[m
+[31m-[m
+[31m-echo "Cargando datos..."[m
+[31m-sudo -u postgres psql -d pagila -f pagila/pagila-insert-data.sql[m
+[31m-if [ $? -ne 0 ]; then[m
+[31m-    echo "Error al cargar los datos"[m
+[31m-    exit 1[m
+[31m-fi[m
+[32m+[m[32mecho "Cargando datos de Pagila..."[m
+[32m+[m[32msudo -u postgres psql -v ON_ERROR_STOP=1 -d "$DB_NAME" -f pagila/pagila-insert-data.sql[m
+ [m
+[31m-echo "Base de datos Pagila preparada correctamente"[m
+[32m+[m[32mecho "Base de datos Pagila preparada correctamente"[m
+\ No newline at end of file[m
+[1mdiff --git a/scripts/setup.sh b/scripts/setup.sh[m
+[1mindex f6891d2..0563c6a 100644[m
+[1m--- a/scripts/setup.sh[m
+[1m+++ b/scripts/setup.sh[m
+[36m@@ -1,61 +1,33 @@[m
+[31m-﻿#!/bin/bash[m
+[32m+[m[32m#!/bin/bash[m
+[32m+[m
+[32m+[m[32mset -euo pipefail[m
+ [m
+[31m-# Configuration log[m
+ LOG_DIR="logs"[m
+[31m-mkdir -p "$LOG_DIR"[m
+ LOG="$LOG_DIR/setup.log"[m
+ [m
+[31m-# Guardar todo en pantalla y en el log[m
+[32m+[m[32mmkdir -p "$LOG_DIR"[m
+[32m+[m
+ exec > >(tee -a "$LOG") 2>&1[m
+ [m
+ echo "==============================="[m
+ echo "INICIO DE CONFIGURACION PAGILA"[m
+ echo "==============================="[m
+ [m
+[31m-# Paso 1: Preparar base de datos[m
+ echo "Paso 1: preparar base de datos"[m
+ bash scripts/prepare-pagila.sh[m
+[31m-if [ $? -ne 0 ]; then[m
+[31m-    echo "Error en 00-prepara-pagila.sh"[m
+[31m-    exit 1[m
+[31m-fi[m
+ [m
+[31m-# Paso 2: Crear roles y usuarios[m
+ echo "Paso 2: crear roles y usuarios"[m
+ sudo -u postgres psql -v ON_ERROR_STOP=1 -d pagila -f sql/01-roles.sql[m
+[31m-if [ $? -ne 0 ]; then[m
+[31m-    echo "Error en 01-rols.sql"[m
+[31m-    exit 1[m
+[31m-fi[m
+ [m
+[31m-# Paso 3: Dar permisos[m
+[31m-echo "Paso 3: dar permisos"[m
+[32m+[m[32mecho "Paso 3: aplicar permisos"[m
+ sudo -u postgres psql -v ON_ERROR_STOP=1 -d pagila -f sql/02-permissions.sql[m
+[31m-if [ $? -ne 0 ]; then[m
+[31m-    echo "Error en 02-permisos.sql"[m
+[31m-    exit 1[m
+[31m-fi[m
+ [m
+[31m-# Paso 4: Crear vista[m
+[31m-echo "Paso 4: crear vista"[m
+[32m+[m[32mecho "Paso 4: crear vista de inventario"[m
+ sudo -u postgres psql -v ON_ERROR_STOP=1 -d pagila -f sql/03-views.sql[m
+[31m-if [ $? -ne 0 ]; then[m
+[31m-    echo "Error en 03-vistes.sql"[m
+[31m-    exit 1[m
+[31m-fi[m
+ [m
+[31m-# Paso 5: Crear trigger[m
+[31m-echo "Paso 5: crear trigger"[m
+[32m+[m[32mecho "Paso 5: crear trigger de integridad"[m
+ sudo -u postgres psql -v ON_ERROR_STOP=1 -d pagila -f sql/04-triggers.sql[m
+[31m-if [ $? -ne 0 ]; then[m
+[31m-    echo "Error en 04-triggers.sql"[m
+[31m-    exit 1[m
+[31m-fi[m
+ [m
+ echo "=================================="[m
+ echo "CONFIGURACION TERMINADA CORRECTAMENTE"[m
+[31m-echo "=================================="[m
+[31m-[m
+[31m-[m
+[31m-[m
+[31m-[m
+[32m+[m[32mecho "=================================="[m
+\ No newline at end of file[m

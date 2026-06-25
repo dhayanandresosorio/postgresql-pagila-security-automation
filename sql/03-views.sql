@@ -1,7 +1,7 @@
--- Eliminamos la vista si ya existe para poder repetir el script sin errores
+-- Eliminar la vista si ya existe para poder repetir el script
 DROP VIEW IF EXISTS vista_inventario;
 
--- Creamos una vista para ver películas y disponibilidad por tienda
+-- Crear una vista con la disponibilidad de peliculas por tienda
 CREATE VIEW vista_inventario AS
 SELECT
     f.title AS titulo,
@@ -14,10 +14,15 @@ SELECT
         END
     ) AS cantidad_disponible
 FROM film f
-JOIN inventory i ON f.film_id = i.film_id
-GROUP BY f.title, i.store_id
-ORDER BY f.title, i.store_id;
+JOIN inventory i
+    ON f.film_id = i.film_id
+GROUP BY
+    f.title,
+    i.store_id
+ORDER BY
+    f.title,
+    i.store_id;
 
--- Damos permiso de lectura sobre la vista
+-- Permisos de lectura sobre la vista
 GRANT SELECT ON vista_inventario TO grup_atencio;
 GRANT SELECT ON vista_inventario TO grup_gerencia;
