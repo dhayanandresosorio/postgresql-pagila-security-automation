@@ -886,29 +886,7 @@ Esto evita subir al repositorio:
 
 ---
 
-## 23. Mejoras aplicadas respecto a la versión inicial
-
-La versión inicial de la práctica funcionaba, pero se ha reorganizado para mejorar la presentación del repositorio.
-
-Mejoras realizadas:
-
-* Se reorganizaron las carpetas en `scripts/`, `sql/` y `docs/`.
-* Se cambiaron nombres antiguos por nombres más claros.
-* Se sustituyó `configura.sh` por `scripts/setup.sh`.
-* Se sustituyó `manteniment.sh` por `scripts/maintenance.sh`.
-* Se sustituyó `scripts-sql/00-prepara-pagila.sh` por `scripts/prepare-pagila.sh`.
-* Se separaron claramente los scripts Bash y SQL.
-* Se movieron los logs a la carpeta `logs/`.
-* Se añadieron placeholders en lugar de contraseñas reales.
-* Se añadió `.gitignore`.
-* Se añadió `.gitattributes`.
-* Se normalizaron los saltos de línea a LF.
-* Se mejoró el README principal.
-* Se dejó una memoria técnica más clara y adaptada al repositorio final.
-
----
-
-## 24. Seguridad
+## 23. Seguridad
 
 Las contraseñas incluidas en los scripts SQL son valores placeholder.
 
@@ -932,7 +910,7 @@ También se limita el acceso mediante roles y permisos, aplicando el principio d
 
 ---
 
-## 25. Resultado final
+## 24. Resultado final
 
 El resultado final es un laboratorio reproducible de PostgreSQL que demuestra:
 
