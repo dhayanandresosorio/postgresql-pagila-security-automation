@@ -12,12 +12,6 @@ Esta práctica consiste en automatizar tareas de administración, seguridad e in
 
 El proyecto incluye scripts Bash y SQL para preparar la base de datos, crear roles y usuarios, aplicar permisos, generar una vista de consulta, crear un trigger de control y ejecutar tareas básicas de mantenimiento.
 
-
-
-El objetivo principal es dejar un laboratorio reproducible, ordenado y documentado, con una estructura más cercana a un repositorio profesional que a una entrega de clase.
-
-
-
 \---
 
 
