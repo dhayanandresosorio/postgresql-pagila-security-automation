@@ -1,785 +1,785 @@
-# \# Memoria tÃ©cnica - PostgreSQL Pagila Security Automation
+# Memoria técnica - PostgreSQL Pagila Security Automation
 
-#
 
-# \## 1. Resumen de la prÃ¡ctica
 
-#
+## 1. Resumen de la práctica
 
-# Esta prÃ¡ctica consiste en automatizar tareas de administraciÃ³n, seguridad e integridad en PostgreSQL utilizando la base de datos de ejemplo Pagila.
 
-#
 
-# El proyecto incluye scripts Bash y SQL para preparar la base de datos, crear roles y usuarios, aplicar permisos, generar una vista de consulta, crear un trigger de control y ejecutar tareas bÃ¡sicas de mantenimiento.
+Esta práctica consiste en automatizar tareas de administración, seguridad e integridad en PostgreSQL utilizando la base de datos de ejemplo Pagila.
 
-#
 
-# El objetivo principal es dejar un laboratorio reproducible, ordenado y documentado, con una estructura mÃ¡s cercana a un repositorio profesional que a una entrega de clase.
 
-#
+El proyecto incluye scripts Bash y SQL para preparar la base de datos, crear roles y usuarios, aplicar permisos, generar una vista de consulta, crear un trigger de control y ejecutar tareas básicas de mantenimiento.
 
-# \---
 
-#
 
-# \## 2. Entorno utilizado
+El objetivo principal es dejar un laboratorio reproducible, ordenado y documentado, con una estructura más cercana a un repositorio profesional que a una entrega de clase.
 
-#
 
-# La prÃ¡ctica estÃ¡ pensada para ejecutarse en una mÃ¡quina Linux con PostgreSQL instalado localmente.
 
-#
+\---
 
-# Entorno previsto:
 
-#
 
-# \* Sistema operativo: Ubuntu Server 24.04
+## 2. Entorno utilizado
 
-# \* Base de datos: PostgreSQL
 
-# \* Base de datos de ejemplo: Pagila
 
-# \* Lenguajes utilizados: Bash, SQL y PL/pgSQL
+La práctica está pensada para ejecutarse en una máquina Linux con PostgreSQL instalado localmente.
 
-# \* Herramientas: Git, GitHub y terminal Linux
 
-#
 
-# Los scripts utilizan el usuario `postgres` mediante `sudo -u postgres`, por lo que es necesario ejecutar la prÃ¡ctica en un entorno donde el usuario tenga permisos de administraciÃ³n.
+Entorno previsto:
 
-#
 
-# \---
 
-#
+\* Sistema operativo: Ubuntu Server 24.04
 
-# \## 3. Estructura del repositorio
+\* Base de datos: PostgreSQL
 
-#
+\* Base de datos de ejemplo: Pagila
 
-# ```text
+\* Lenguajes utilizados: Bash, SQL y PL/pgSQL
 
-# postgresql-pagila-security-automation/
+\* Herramientas: Git, GitHub y terminal Linux
 
-# â”œâ”€â”€ README.md
 
-# â”œâ”€â”€ .gitignore
 
-# â”œâ”€â”€ .gitattributes
+Los scripts utilizan el usuario `postgres` mediante `sudo -u postgres`, por lo que es necesario ejecutar la práctica en un entorno donde el usuario tenga permisos de administración.
 
-# â”œâ”€â”€ scripts/
 
-# â”‚   â”œâ”€â”€ setup.sh
 
-# â”‚   â”œâ”€â”€ prepare-pagila.sh
+\---
 
-# â”‚   â””â”€â”€ maintenance.sh
 
-# â”œâ”€â”€ sql/
 
-# â”‚   â”œâ”€â”€ 01-roles.sql
+## 3. Estructura del repositorio
 
-# â”‚   â”œâ”€â”€ 02-permissions.sql
 
-# â”‚   â”œâ”€â”€ 03-views.sql
 
-# â”‚   â””â”€â”€ 04-triggers.sql
+```text
 
-# â””â”€â”€ docs/
+postgresql-pagila-security-automation/
 
-# &#x20;   â””â”€â”€ memoria.md
+├── README.md
 
-# ```
+├── .gitignore
 
-#
+├── .gitattributes
 
-# La estructura separa claramente la documentaciÃ³n, los scripts Bash y los scripts SQL.
+├── scripts/
 
-#
+│   ├── setup.sh
 
-# \---
+│   ├── prepare-pagila.sh
 
-#
+│   └── maintenance.sh
 
-# \## 4. InstalaciÃ³n de dependencias
+├── sql/
 
-#
+│   ├── 01-roles.sql
 
-# Antes de ejecutar la prÃ¡ctica se instalan PostgreSQL, herramientas adicionales y Git:
+│   ├── 02-permissions.sql
 
-#
+│   ├── 03-views.sql
 
-# ```bash
+│   └── 04-triggers.sql
 
-# sudo apt update
+└── docs/
 
-# sudo apt install -y postgresql postgresql-contrib git
+&#x20;   └── memoria.md
 
-# ```
+```
 
-#
 
-# DespuÃ©s se comprueba el estado del servicio:
 
-#
+La estructura separa claramente la documentación, los scripts Bash y los scripts SQL.
 
-# ```bash
 
-# sudo systemctl status postgresql
 
-# ```
+\---
 
-#
 
-# El servicio debe estar activo antes de continuar.
 
-#
+## 4. Instalación de dependencias
 
-# \---
 
-#
 
-# \## 5. Funcionamiento general
+Antes de ejecutar la práctica se instalan PostgreSQL, herramientas adicionales y Git:
 
-#
 
-# El proceso principal se ejecuta mediante el script:
 
-#
+```bash
 
-# ```bash
+sudo apt update
 
-# ./scripts/setup.sh
+sudo apt install -y postgresql postgresql-contrib git
 
-# ```
+```
 
-#
 
-# Este script realiza las siguientes tareas:
 
-#
+Después se comprueba el estado del servicio:
 
-# 1\. Ejecuta `scripts/prepare-pagila.sh`.
 
-# 2\. Clona el repositorio de Pagila.
 
-# 3\. Elimina una base de datos anterior si ya existÃ­a.
+```bash
 
-# 4\. Crea de nuevo la base de datos `pagila`.
+sudo systemctl status postgresql
 
-# 5\. Carga el esquema y los datos.
+```
 
-# 6\. Ejecuta los scripts SQL en orden.
 
-# 7\. Genera un log en `logs/setup.log`.
 
-#
+El servicio debe estar activo antes de continuar.
 
-# El orden de ejecuciÃ³n es importante porque primero debe existir la base de datos y despuÃ©s se aplican roles, permisos, vistas y triggers.
 
-#
 
-# \---
+\---
 
-#
 
-# \## 6. Script de preparaciÃ³n de Pagila
 
-#
+## 5. Funcionamiento general
 
-# Archivo:
 
-#
 
-# ```text
+El proceso principal se ejecuta mediante el script:
 
-# scripts/prepare-pagila.sh
 
-# ```
 
-#
+```bash
 
-# Este script se encarga de preparar la base de datos desde cero.
+./scripts/setup.sh
 
-#
+```
 
-# Tareas principales:
 
-#
 
-# \* Clonar el repositorio de Pagila.
+Este script realiza las siguientes tareas:
 
-# \* Borrar la carpeta local `pagila/` si ya existe.
 
-# \* Eliminar la base de datos `pagila` si ya estaba creada.
 
-# \* Crear una nueva base de datos `pagila`.
+1\. Ejecuta `scripts/prepare-pagila.sh`.
 
-# \* Cargar el esquema.
+2\. Clona el repositorio de Pagila.
 
-# \* Cargar los datos.
+3\. Elimina una base de datos anterior si ya existía.
 
-#
+4\. Crea de nuevo la base de datos `pagila`.
 
-# Este enfoque permite repetir la prÃ¡ctica de forma limpia sin tener que borrar todo manualmente.
+5\. Carga el esquema y los datos.
 
-#
+6\. Ejecuta los scripts SQL en orden.
 
-# \---
+7\. Genera un log en `logs/setup.log`.
 
-#
 
-# \## 7. Script principal de configuraciÃ³n
 
-#
+El orden de ejecución es importante porque primero debe existir la base de datos y después se aplican roles, permisos, vistas y triggers.
 
-# Archivo:
 
-#
 
-# ```text
+\---
 
-# scripts/setup.sh
 
-# ```
 
-#
+## 6. Script de preparación de Pagila
 
-# Este script actÃºa como orquestador de toda la prÃ¡ctica.
 
-#
 
-# Ejecuta en orden:
+Archivo:
 
-#
 
-# ```text
 
-# scripts/prepare-pagila.sh
+```text
 
-# sql/01-roles.sql
+scripts/prepare-pagila.sh
 
-# sql/02-permissions.sql
+```
 
-# sql/03-views.sql
 
-# sql/04-triggers.sql
 
-# ```
+Este script se encarga de preparar la base de datos desde cero.
 
-#
 
-# AdemÃ¡s, guarda la salida de ejecuciÃ³n en:
 
-#
+Tareas principales:
 
-# ```text
 
-# logs/setup.log
 
-# ```
+\* Clonar el repositorio de Pagila.
 
-#
+\* Borrar la carpeta local `pagila/` si ya existe.
 
-# El script utiliza:
+\* Eliminar la base de datos `pagila` si ya estaba creada.
 
-#
+\* Crear una nueva base de datos `pagila`.
 
-# ```bash
+\* Cargar el esquema.
 
-# set -euo pipefail
+\* Cargar los datos.
 
-# ```
 
-#
 
-# Esto hace que la ejecuciÃ³n se detenga si aparece un error, si se utiliza una variable no definida o si falla una parte importante del proceso.
+Este enfoque permite repetir la práctica de forma limpia sin tener que borrar todo manualmente.
 
-#
 
-# \---
 
-#
+\---
 
-# \## 8. Roles y usuarios
 
-#
 
-# Archivo:
+## 7. Script principal de configuración
 
-#
 
-# ```text
 
-# sql/01-roles.sql
+Archivo:
 
-# ```
 
-#
 
-# Este script crea dos roles de grupo:
+```text
 
-#
+scripts/setup.sh
 
-# \* `grup\_gerencia`
+```
 
-# \* `grup\_atencio`
 
-#
 
-# Y dos usuarios de laboratorio:
+Este script actúa como orquestador de toda la práctica.
 
-#
 
-# \* `daxxmanager`
 
-# \* `daxxstaff`
+Ejecuta en orden:
 
-#
 
-# Los usuarios se asignan a sus grupos correspondientes.
 
-#
+```text
 
-# Las contraseÃ±as incluidas son valores placeholder, no contraseÃ±as reales:
+scripts/prepare-pagila.sh
 
-#
+sql/01-roles.sql
 
-# ```sql
+sql/02-permissions.sql
 
-# CREATE USER daxxmanager WITH PASSWORD 'CHANGE\_ME\_MANAGER\_PASSWORD';
+sql/03-views.sql
 
-# CREATE USER daxxstaff WITH PASSWORD 'CHANGE\_ME\_STAFF\_PASSWORD';
+sql/04-triggers.sql
 
-# ```
+```
 
-#
 
-# \---
 
-#
+Además, guarda la salida de ejecución en:
 
-# \## 9. Permisos
 
-#
 
-# Archivo:
+```text
 
-#
+logs/setup.log
 
-# ```text
+```
 
-# sql/02-permissions.sql
 
-# ```
 
-#
+El script utiliza:
 
-# Este script aplica permisos segÃºn el perfil de usuario.
 
-#
 
-# La idea principal es evitar permisos generales innecesarios y aplicar permisos mÃ­nimos segÃºn el rol.
+```bash
 
-#
+set -euo pipefail
 
-# Acciones principales:
+```
 
-#
 
-# \* Revocar permisos generales a `public`.
 
-# \* Permitir conexiÃ³n a la base de datos.
+Esto hace que la ejecución se detenga si aparece un error, si se utiliza una variable no definida o si falla una parte importante del proceso.
 
-# \* Permitir uso del esquema `public`.
 
-# \* Dar permisos de consulta y modificaciÃ³n a gerencia.
 
-# \* Dar permisos mÃ¡s limitados al grupo de atenciÃ³n.
+\---
 
-# \* Conceder uso de secuencias necesarias para inserciones.
 
-#
 
-# Esto permite separar responsabilidades dentro de la base de datos.
+## 8. Roles y usuarios
 
-#
 
-# \---
 
-#
+Archivo:
 
-# \## 10. Vista de inventario
 
-#
 
-# Archivo:
+```text
 
-#
+sql/01-roles.sql
 
-# ```text
+```
 
-# sql/03-views.sql
 
-# ```
 
-#
+Este script crea dos roles de grupo:
 
-# Este script crea la vista:
 
-#
 
-# ```text
+\* `grup\_gerencia`
 
-# vista\_inventario
+\* `grup\_atencio`
 
-# ```
 
-#
 
-# La vista muestra informaciÃ³n Ãºtil sobre pelÃ­culas e inventario por tienda:
+Y dos usuarios de laboratorio:
 
-#
 
-# \* TÃ­tulo de la pelÃ­cula.
 
-# \* Tienda.
+\* `daxxmanager`
 
-# \* Cantidad total.
+\* `daxxstaff`
 
-# \* Cantidad disponible.
 
-#
 
-# La vista simplifica consultas que, de otra forma, requerirÃ­an acceder directamente a varias tablas.
+Los usuarios se asignan a sus grupos correspondientes.
 
-#
 
-# ComprobaciÃ³n:
 
-#
+Las contraseñas incluidas son valores placeholder, no contraseñas reales:
 
-# ```bash
 
-# sudo -u postgres psql -d pagila -c "SELECT \* FROM vista\_inventario LIMIT 10;"
 
-# ```
+```sql
 
-#
+CREATE USER daxxmanager WITH PASSWORD 'CHANGE\_ME\_MANAGER\_PASSWORD';
 
-# \---
+CREATE USER daxxstaff WITH PASSWORD 'CHANGE\_ME\_STAFF\_PASSWORD';
 
-#
+```
 
-# \## 11. Trigger de integridad
 
-#
 
-# Archivo:
+\---
 
-#
 
-# ```text
 
-# sql/04-triggers.sql
+## 9. Permisos
 
-# ```
 
-#
 
-# Este script crea una funciÃ³n y un trigger para controlar nuevos alquileres.
+Archivo:
 
-#
 
-# El trigger impide insertar un nuevo alquiler si el cliente cumple alguna de estas condiciones:
 
-#
+```text
 
-# \* Tiene alquileres pendientes de mÃ¡s de 30 dÃ­as.
+sql/02-permissions.sql
 
-# \* Tiene deuda pendiente.
+```
 
-#
 
-# Esto permite aplicar una regla de negocio directamente en la base de datos.
 
-#
+Este script aplica permisos según el perfil de usuario.
 
-# TambiÃ©n se corrige la funciÃ³n `get\_customer\_balance` de Pagila, ya que la versiÃ³n original utiliza una sintaxis tipo MySQL (`IF()`), mientras que PostgreSQL requiere `CASE WHEN`.
 
-#
 
-# \---
+La idea principal es evitar permisos generales innecesarios y aplicar permisos mínimos según el rol.
 
-#
 
-# \## 12. Script de mantenimiento
 
-#
+Acciones principales:
 
-# Archivo:
 
-#
 
-# ```text
+\* Revocar permisos generales a `public`.
 
-# scripts/maintenance.sh
+\* Permitir conexión a la base de datos.
 
-# ```
+\* Permitir uso del esquema `public`.
 
-#
+\* Dar permisos de consulta y modificación a gerencia.
 
-# Este script ejecuta tareas bÃ¡sicas de mantenimiento sobre tablas importantes:
+\* Dar permisos más limitados al grupo de atención.
 
-#
+\* Conceder uso de secuencias necesarias para inserciones.
 
-# \* `rental`
 
-# \* `inventory`
 
-# \* `film`
+Esto permite separar responsabilidades dentro de la base de datos.
 
-#
 
-# Operaciones realizadas:
 
-#
+\---
 
-# ```sql
 
-# VACUUM ANALYZE;
 
-# REINDEX TABLE;
+## 10. Vista de inventario
 
-# ```
 
-#
 
-# La salida se guarda en:
+Archivo:
 
-#
 
-# ```text
 
-# logs/maintenance.log
+```text
 
-# ```
+sql/03-views.sql
 
-#
+```
 
-# El script estÃ¡ preparado para recorrer las tablas mediante un array, evitando repetir bloques de cÃ³digo innecesarios.
 
-#
 
-# \---
+Este script crea la vista:
 
-#
 
-# \## 13. Comprobaciones realizadas
 
-#
+```text
 
-# Durante la prÃ¡ctica se comprobaron los siguientes puntos:
+vista\_inventario
 
-#
+```
 
-# \* PostgreSQL instalado y activo.
 
-# \* Base de datos `pagila` creada correctamente.
 
-# \* Esquema y datos cargados.
+La vista muestra información útil sobre películas e inventario por tienda:
 
-# \* Tablas disponibles.
 
-# \* Roles y usuarios creados.
 
-# \* Permisos aplicados.
+\* Título de la película.
 
-# \* Vista `vista\_inventario` funcionando.
+\* Tienda.
 
-# \* Trigger bloqueando alquileres no permitidos.
+\* Cantidad total.
 
-# \* Script de mantenimiento ejecutado correctamente.
+\* Cantidad disponible.
 
-# \* Logs generados en la carpeta `logs/`.
 
-#
 
-# ComprobaciÃ³n de bases de datos:
+La vista simplifica consultas que, de otra forma, requerirían acceder directamente a varias tablas.
 
-#
 
-# ```bash
 
-# sudo -u postgres psql -c "\\l"
+Comprobación:
 
-# ```
 
-#
 
-# ComprobaciÃ³n de tablas:
+```bash
 
-#
+sudo -u postgres psql -d pagila -c "SELECT \* FROM vista\_inventario LIMIT 10;"
 
-# ```bash
+```
 
-# sudo -u postgres psql -d pagila -c "\\dt"
 
-# ```
 
-#
+\---
 
-# ComprobaciÃ³n de roles:
 
-#
 
-# ```bash
+## 11. Trigger de integridad
 
-# sudo -u postgres psql -d pagila -c "\\du"
 
-# ```
 
-#
+Archivo:
 
-# ComprobaciÃ³n de la vista:
 
-#
 
-# ```bash
+```text
 
-# sudo -u postgres psql -d pagila -c "SELECT \* FROM vista\_inventario LIMIT 10;"
+sql/04-triggers.sql
 
-# ```
+```
 
-#
 
-# \---
 
-#
+Este script crea una función y un trigger para controlar nuevos alquileres.
 
-# \## 14. Logs
 
-#
 
-# Los scripts generan logs dentro de la carpeta:
+El trigger impide insertar un nuevo alquiler si el cliente cumple alguna de estas condiciones:
 
-#
 
-# ```text
 
-# logs/
+\* Tiene alquileres pendientes de más de 30 días.
 
-# ```
+\* Tiene deuda pendiente.
 
-#
 
-# Archivos generados:
 
-#
+Esto permite aplicar una regla de negocio directamente en la base de datos.
 
-# ```text
 
-# logs/setup.log
 
-# logs/maintenance.log
+También se corrige la función `get\_customer\_balance` de Pagila, ya que la versión original utiliza una sintaxis tipo MySQL (`IF()`), mientras que PostgreSQL requiere `CASE WHEN`.
 
-# ```
 
-#
 
-# Estos archivos no se suben al repositorio porque son generados durante la ejecuciÃ³n local.
+\---
 
-#
 
-# La carpeta estÃ¡ ignorada mediante `.gitignore`.
 
-#
+## 12. Script de mantenimiento
 
-# \---
 
-#
 
-# \## 15. Archivos ignorados
+Archivo:
 
-#
 
-# El repositorio ignora archivos temporales o generados automÃ¡ticamente:
 
-#
+```text
 
-# ```text
+scripts/maintenance.sh
 
-# logs/
+```
 
-# \*.log
 
-# pagila/
 
-# .env
+Este script ejecuta tareas básicas de mantenimiento sobre tablas importantes:
 
-# .vscode/
 
-# ```
 
-#
+\* `rental`
 
-# La carpeta `pagila/` no forma parte del repositorio porque se descarga automÃ¡ticamente al ejecutar el script de preparaciÃ³n.
+\* `inventory`
 
-#
+\* `film`
 
-# \---
 
-#
 
-# \## 16. Nota de seguridad
+Operaciones realizadas:
 
-#
 
-# Las contraseÃ±as del proyecto son valores de laboratorio.
 
-#
+```sql
 
-# En un entorno real no se deberÃ­an guardar contraseÃ±as directamente dentro de scripts SQL versionados.
+VACUUM ANALYZE;
 
-#
+REINDEX TABLE;
 
-# Lo correcto en producciÃ³n serÃ­a usar:
+```
 
-#
 
-# \* Variables de entorno.
 
-# \* Ficheros de configuraciÃ³n no versionados.
+La salida se guarda en:
 
-# \* Un gestor de secretos.
 
-# \* PolÃ­ticas de rotaciÃ³n de credenciales.
 
-#
+```text
 
-# \---
+logs/maintenance.log
 
-#
+```
 
-# \## 17. Resultado final
 
-#
 
-# El resultado final es un laboratorio reproducible de administraciÃ³n de PostgreSQL que demuestra:
+El script está preparado para recorrer las tablas mediante un array, evitando repetir bloques de código innecesarios.
 
-#
 
-# \* AutomatizaciÃ³n con Bash.
 
-# \* AdministraciÃ³n bÃ¡sica de PostgreSQL.
+\---
 
-# \* Carga de una base de datos de ejemplo.
 
-# \* GestiÃ³n de roles y permisos.
 
-# \* CreaciÃ³n de vistas.
+## 13. Comprobaciones realizadas
 
-# \* Uso de triggers para reglas de integridad.
 
-# \* Mantenimiento bÃ¡sico de tablas.
+
+Durante la práctica se comprobaron los siguientes puntos:
+
+
+
+\* PostgreSQL instalado y activo.
+
+\* Base de datos `pagila` creada correctamente.
+
+\* Esquema y datos cargados.
+
+\* Tablas disponibles.
+
+\* Roles y usuarios creados.
+
+\* Permisos aplicados.
+
+\* Vista `vista\_inventario` funcionando.
+
+\* Trigger bloqueando alquileres no permitidos.
+
+\* Script de mantenimiento ejecutado correctamente.
+
+\* Logs generados en la carpeta `logs/`.
+
+
+
+Comprobación de bases de datos:
+
+
+
+```bash
+
+sudo -u postgres psql -c "\\l"
+
+```
+
+
+
+Comprobación de tablas:
+
+
+
+```bash
+
+sudo -u postgres psql -d pagila -c "\\dt"
+
+```
+
+
+
+Comprobación de roles:
+
+
+
+```bash
+
+sudo -u postgres psql -d pagila -c "\\du"
+
+```
+
+
+
+Comprobación de la vista:
+
+
+
+```bash
+
+sudo -u postgres psql -d pagila -c "SELECT \* FROM vista\_inventario LIMIT 10;"
+
+```
+
+
+
+\---
+
+
+
+## 14. Logs
+
+
+
+Los scripts generan logs dentro de la carpeta:
+
+
+
+```text
+
+logs/
+
+```
+
+
+
+Archivos generados:
+
+
+
+```text
+
+logs/setup.log
+
+logs/maintenance.log
+
+```
+
+
+
+Estos archivos no se suben al repositorio porque son generados durante la ejecución local.
+
+
+
+La carpeta está ignorada mediante `.gitignore`.
+
+
+
+\---
+
+
+
+## 15. Archivos ignorados
+
+
+
+El repositorio ignora archivos temporales o generados automáticamente:
+
+
+
+```text
+
+logs/
+
+\*.log
+
+pagila/
+
+.env
+
+.vscode/
+
+```
+
+
+
+La carpeta `pagila/` no forma parte del repositorio porque se descarga automáticamente al ejecutar el script de preparación.
+
+
+
+\---
+
+
+
+## 16. Nota de seguridad
+
+
+
+Las contraseñas del proyecto son valores de laboratorio.
+
+
+
+En un entorno real no se deberían guardar contraseñas directamente dentro de scripts SQL versionados.
+
+
+
+Lo correcto en producción sería usar:
+
+
+
+\* Variables de entorno.
+
+\* Ficheros de configuración no versionados.
+
+\* Un gestor de secretos.
+
+\* Políticas de rotación de credenciales.
+
+
+
+\---
+
+
+
+## 17. Resultado final
+
+
+
+El resultado final es un laboratorio reproducible de administración de PostgreSQL que demuestra:
+
+
+
+\* Automatización con Bash.
+
+\* Administración básica de PostgreSQL.
+
+\* Carga de una base de datos de ejemplo.
+
+\* Gestión de roles y permisos.
+
+\* Creación de vistas.
+
+\* Uso de triggers para reglas de integridad.
+
+\* Mantenimiento básico de tablas.
