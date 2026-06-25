@@ -10,6 +10,6 @@ pagila/
 *.bak
 .DS_Store
 
-# Configuración local
+# Configuracion local
 .env
 .vscode/
