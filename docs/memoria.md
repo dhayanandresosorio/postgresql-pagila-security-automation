@@ -1,4 +1,4 @@
-﻿# Memoria tecnica - PostgreSQL Pagila Security Automation
+# Memoria tecnica - PostgreSQL Pagila Security Automation
 
 ## 1. Resumen
 
