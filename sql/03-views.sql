@@ -1,7 +1,5 @@
--- Eliminar la vista si ya existe para poder repetir el script
 DROP VIEW IF EXISTS vista_inventario;
 
--- Crear una vista con la disponibilidad de peliculas por tienda
 CREATE VIEW vista_inventario AS
 SELECT
     f.title AS titulo,
@@ -23,6 +21,5 @@ ORDER BY
     f.title,
     i.store_id;
 
--- Permisos de lectura sobre la vista
 GRANT SELECT ON vista_inventario TO grup_atencio;
 GRANT SELECT ON vista_inventario TO grup_gerencia;

@@ -17,12 +17,12 @@ echo "========================="
 TABLES=("rental" "inventory" "film")
 
 for TABLE in "${TABLES[@]}"; do
-    echo "Haciendo VACUUM ANALYZE en $TABLE..."
+    echo "Ejecutando VACUUM ANALYZE en $TABLE"
     sudo -u postgres psql -v ON_ERROR_STOP=1 -d "$DB_NAME" -c "VACUUM ANALYZE $TABLE;"
 done
 
 for TABLE in "${TABLES[@]}"; do
-    echo "Haciendo REINDEX en $TABLE..."
+    echo "Ejecutando REINDEX en $TABLE"
     sudo -u postgres psql -v ON_ERROR_STOP=1 -d "$DB_NAME" -c "REINDEX TABLE $TABLE;"
 done
 

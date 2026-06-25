@@ -1,5 +1,3 @@
--- Corregir la funcion get_customer_balance incluida en Pagila.
--- La version original usa IF(), que es sintaxis de MySQL. En PostgreSQL se usa CASE WHEN.
 CREATE OR REPLACE FUNCTION public.get_customer_balance(
     p_customer_id integer,
     p_effective_date timestamp with time zone
@@ -12,7 +10,6 @@ DECLARE
     v_overfees NUMERIC(10,2);
     v_payments NUMERIC(10,2);
 BEGIN
-    -- Calcular el coste de los alquileres anteriores
     SELECT COALESCE(SUM(f.rental_rate), 0)
     INTO v_rentfees
     FROM film f
@@ -23,7 +20,6 @@ BEGIN
     WHERE r.rental_date <= p_effective_date
       AND r.customer_id = p_customer_id;
 
-    -- Calcular los dias de retraso
     SELECT COALESCE(SUM(
         CASE
             WHEN r.return_date IS NOT NULL
@@ -41,7 +37,6 @@ BEGIN
     WHERE r.rental_date <= p_effective_date
       AND r.customer_id = p_customer_id;
 
-    -- Calcular pagos realizados por el cliente
     SELECT COALESCE(SUM(p.amount), 0)
     INTO v_payments
     FROM payment p
@@ -52,11 +47,9 @@ BEGIN
 END;
 $function$;
 
--- Eliminar trigger y funcion si ya existen
 DROP TRIGGER IF EXISTS trigger_comprobar_alquiler ON rental;
 DROP FUNCTION IF EXISTS comprobar_alquiler();
 
--- Funcion del trigger que impide alquileres si hay deuda o alquileres antiguos pendientes
 CREATE OR REPLACE FUNCTION comprobar_alquiler()
 RETURNS TRIGGER AS $$
 DECLARE
@@ -90,7 +83,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Crear trigger antes de insertar un alquiler
 CREATE TRIGGER trigger_comprobar_alquiler
 BEFORE INSERT ON rental
 FOR EACH ROW
